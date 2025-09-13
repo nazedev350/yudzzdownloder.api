@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>TikTok & Instagram Downloader</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: url('https://qu.ax/cdRDg.jpg') no-repeat center center fixed;
+    background-size: cover;
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .container {
+    background: rgba(0, 0, 0, 0.8);
+    color: #eee;
+    padding: 2rem;
+    border-radius: 10px;
+    max-width: 650px;
+    width: 100%;
+    text-align: center;
+  }
+  h1 {
+    margin-bottom: 1rem;
+    color: #ff4081;
+  }
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+  }
+  input[type="text"] {
+    width: 100%;
+    padding: 0.7rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    border: none;
+    margin-bottom: 1rem;
+  }
+  button {
+    background: #ff4081;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  button:disabled {
+    background: #a00030;
+    cursor: not-allowed;
+  }
+  .result {
+    margin-top: 1.5rem;
+    background: #222;
+    padding: 1rem;
+    border-radius: 6px;
+  }
+  .download-links a {
+    display: inline-block;
+    margin: 0.3rem;
+    background: #ff4081;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+  }
+  .download-links a:hover {
+    background: #e60047;
+  }
+  .error {
+    background: #800000;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+    color: #fff;
+  }
+  video {
+    max-width: 100%;
+    margin-top: 1rem;
+    border-radius: 6px;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎥 TikTok & Instagram Downloader 🎵</h1>
+    <label for="urlInput">Masukkan Link TikTok / Instagram:</label>
+    <input type="text" id="urlInput" placeholder="https://www.tiktok.com/... atau https://www.instagram.com/..." />
+    <button id="downloadBtn">Download</button>
+
+    <div id="loading" style="display:none; margin-top:1rem;">⏳ Memproses...</div>
+    <div id="error" class="error" style="display:none;"></div>
+
+    <div id="result" class="result" style="display:none;">
+      <h3>Preview:</h3>
+      <video id="videoPlayer" controls style="display:none;"></video>
+      <h3>Link Download:</h3>
+      <div class="download-links" id="downloadLinks"></div>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+  // TikTok Downloader
+  async function tiktokDl(url) {
+    let domain = 'https://www.tikwm.com/api/';
+    const { data } = await axios.post(domain, {}, { params: { url: url, hd: 1 } });
+    return data.data;
+  }
+
+  // Instagram Downloader (contoh API free, bisa diganti API lu sendiri)
+  async function instagramDl(url) {
+    const api = `https://api.azz.biz.id/api/igdl?url=${encodeURIComponent(url)}`;
+    const { data } = await axios.get(api);
+    return data.result;
+  }
+
+  const btn = document.getElementById('downloadBtn');
+  const input = document.getElementById('urlInput');
+  const loading = document.getElementById('loading');
+  const errorEl = document.getElementById('error');
+  const resultEl = document.getElementById('result');
+  const videoPlayer = document.getElementById('videoPlayer');
+  const downloadLinks = document.getElementById('downloadLinks');
+
+  btn.addEventListener('click', async () => {
+    const url = input.value.trim();
+    if (!url) {
+      alert('Masukkan link TikTok atau Instagram!');
+      return;
+    }
+
+    loading.style.display = 'block';
+    errorEl.style.display = 'none';
+    resultEl.style.display = 'none';
+    videoPlayer.style.display = 'none';
+    downloadLinks.innerHTML = '';
+
+    try {
+      if (url.includes('tiktok.com')) {
+        let data = await tiktokDl(url);
+        // set video
+        if (data.play) {
+          videoPlayer.src = data.play;
+          videoPlayer.style.display = 'block';
+        }
+        // link
+        if (data.play) downloadLinks.innerHTML += `<a href="${data.play}" target="_blank">Video (No Watermark)</a>`;
+        if (data.hdplay) downloadLinks.innerHTML += `<a href="${data.hdplay}" target="_blank">Video HD</a>`;
+        if (data.music) downloadLinks.innerHTML += `<a href="${data.music}" target="_blank">Musik</a>`;
+      } else if (url.includes('instagram.com')) {
+        let data = await instagramDl(url);
+        data.forEach(item => {
+          if (item.url.includes('.mp4')) {
+            videoPlayer.src = item.url;
+            videoPlayer.style.display = 'block';
+          }
+          downloadLinks.innerHTML += `<a href="${item.url}" target="_blank">${item.type || 'Download'}</a>`;
+        });
+      } else {
+        throw new Error('Hanya mendukung TikTok & Instagram.');
+      }
+      resultEl.style.display = 'block';
+    } catch (err) {
+      console.error(err);
+      errorEl.textContent = '❌ Gagal mengambil data. Pastikan link valid!';
+      errorEl.style.display = 'block';
+    } finally {
+      loading.style.display = 'none';
+    }
+  });
+</script>
+</body>
+</html>
